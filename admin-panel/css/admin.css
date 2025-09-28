@@ -1,0 +1,343 @@
+/* ROG Store Admin Styles */
+
+:root {
+    --rog-red: #FF0000;
+    --rog-red-dark: #CC0000;
+    --rog-orange: #FF6600;
+    --rog-yellow: #FFFF00;
+    --rog-black: #000000;
+    --rog-dark-grey: #1A1A1A;
+    --rog-grey: #2D2D2D;
+    --rog-light-grey: #404040;
+    --rog-white: #FFFFFF;
+    --rog-silver: #C0C0C0;
+}
+
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Navigation */
+.navbar-brand {
+    font-weight: bold;
+    color: var(--rog-red) !important;
+}
+
+.navbar-dark .navbar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.8);
+    transition: color 0.3s ease;
+}
+
+.navbar-dark .navbar-nav .nav-link:hover,
+.navbar-dark .navbar-nav .nav-link.active {
+    color: var(--rog-red) !important;
+}
+
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    top: 56px;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    background-color: var(--rog-dark-grey);
+    min-height: calc(100vh - 56px);
+}
+
+.sidebar-sticky {
+    position: relative;
+    top: 0;
+    height: calc(100vh - 56px);
+    padding-top: .5rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.8);
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.sidebar .nav-link:hover {
+    color: var(--rog-red);
+    background-color: rgba(255, 0, 0, 0.1);
+}
+
+.sidebar .nav-link.active {
+    color: var(--rog-red);
+    background-color: rgba(255, 0, 0, 0.2);
+    border-left: 4px solid var(--rog-red);
+}
+
+/* Main Content */
+main {
+    margin-left: 0;
+    padding-top: 1rem;
+}
+
+@media (min-width: 768px) {
+    main {
+        margin-left: 16.66666667%;
+    }
+}
+
+/* Cards */
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.25rem 2rem 0 rgba(58, 59, 69, 0.25);
+}
+
+.card-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+    border-radius: 10px 10px 0 0 !important;
+}
+
+/* Stats Cards */
+.border-left-primary {
+    border-left: 0.25rem solid var(--rog-red) !important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid var(--rog-orange) !important;
+}
+
+.text-primary {
+    color: var(--rog-red) !important;
+}
+
+.text-success {
+    color: #1cc88a !important;
+}
+
+.text-info {
+    color: #36b9cc !important;
+}
+
+.text-warning {
+    color: var(--rog-orange) !important;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: var(--rog-red);
+    border-color: var(--rog-red);
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: var(--rog-red-dark);
+    border-color: var(--rog-red-dark);
+    transform: translateY(-1px);
+}
+
+.btn-outline-primary {
+    color: var(--rog-red);
+    border-color: var(--rog-red;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--rog-red);
+    border-color: var(--rog-red);
+}
+
+/* Tables */
+.table {
+    background-color: white;
+}
+
+.table th {
+    background-color: #f8f9fc;
+    border-top: none;
+    font-weight: 600;
+    color: #5a5c69;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Status Badges */
+.badge {
+    font-size: 0.75em;
+    font-weight: 600;
+}
+
+.badge-pendiente {
+    background-color: #f6c23e;
+    color: #212529;
+}
+
+.badge-procesando {
+    background-color: #36b9cc;
+    color: white;
+}
+
+.badge-enviado {
+    background-color: #1cc88a;
+    color: white;
+}
+
+.badge-entregado {
+    background-color: #28a745;
+    color: white;
+}
+
+.badge-cancelado {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Modals */
+.modal-header {
+    background-color: var(--rog-dark-grey);
+    color: white;
+    border-bottom: 1px solid var(--rog-grey);
+}
+
+.modal-content {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Forms */
+.form-control:focus {
+    border-color: var(--rog-red);
+    box-shadow: 0 0 0 0.2rem rgba(255, 0, 0, 0.25);
+}
+
+.form-select:focus {
+    border-color: var(--rog-red);
+    box-shadow: 0 0 0 0.2rem rgba(255, 0, 0, 0.25);
+}
+
+/* Loading Spinner */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Product Images */
+.product-image {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 5px;
+}
+
+/* Action Buttons */
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    border-radius: 0.2rem;
+}
+
+/* Responsive */
+@media (max-width: 767.98px) {
+    .sidebar {
+        position: static;
+        height: auto;
+        min-height: auto;
+    }
+
+    main {
+        margin-left: 0;
+    }
+
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--rog-red);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--rog-red-dark);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.content-section {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+/* ROG Gaming Theme Elements */
+.gaming-border {
+    border: 2px solid var(--rog-red);
+    border-radius: 10px;
+    background: linear-gradient(45deg, var(--rog-dark-grey), var(--rog-grey));
+    color: white;
+}
+
+.gaming-text {
+    color: var(--rog-red);
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+}
+
+/* Status Indicators */
+.status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.status-online {
+    background-color: #28a745;
+    box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+}
+
+.status-offline {
+    background-color: #dc3545;
+    box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+}
+
+.status-pending {
+    background-color: #ffc107;
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+}
