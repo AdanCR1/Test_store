@@ -5,7 +5,12 @@ package com.example.test_store
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.BackHandler
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.URL
 import com.google.gson.Gson
+import coil.compose.AsyncImage
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,6 +57,7 @@ data class Producto(
     val nombre: String,
     val precio: String,
     val descripción: String,
+    val imagen_url: String?,
     val categoria_id: Int,
     val categoria_nombre: String? = null
 )
@@ -67,11 +74,23 @@ data class ProductoResponse(
     val data: List<Producto>? = null
 )
 
+data class SingleProductoResponse(
+    val success: Boolean,
+    val message: String? = null,
+    val data: Producto? = null
+)
+
 // Navegación principal
 @Composable
 fun AppNavigation() {
     var currentUser by remember { mutableStateOf<User?>(null) }
+    var selectedProductId by remember { mutableStateOf<Int?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Back handler para la pantalla de detalle
+    BackHandler(enabled = selectedProductId != null) {
+        selectedProductId = null
+    }
 
     // Mostrar error global si ocurre
     if (errorMessage != null) {
@@ -86,7 +105,11 @@ fun AppNavigation() {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(errorMessage ?: "Error desconocido")
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = { errorMessage = null; currentUser = null }) {
+                Button(onClick = {
+                    errorMessage = null
+                    currentUser = null
+                    selectedProductId = null
+                }) {
                     Text("Reiniciar")
                 }
             }
@@ -100,10 +123,21 @@ fun AppNavigation() {
                 errorMessage = error
             }
         )
+    } else if (selectedProductId != null) {
+        ProductoDetailScreen(
+            productId = selectedProductId!!,
+            onBack = { selectedProductId = null }
+        )
     } else {
         ProductosScreen(
             currentUser = currentUser!!,
-            onLogout = { currentUser = null },
+            onLogout = {
+                currentUser = null
+                selectedProductId = null
+            },
+            onProductoClick = { productId ->
+                selectedProductId = productId
+            },
             onError = { error ->
                 errorMessage = error
             }
@@ -111,11 +145,11 @@ fun AppNavigation() {
     }
 }
 
-// Pantalla de Login
+// Pantalla de Login - App
 @Composable
 fun LoginScreen(onLoginSuccess: (User) -> Unit, onError: (String) -> Unit) {
-    var email by remember { mutableStateOf("us1@gmail.com") } // Cambié a @gmail.com
-    var password by remember { mutableStateOf("4321") }
+    var email by remember { mutableStateOf("marshel@tecba.com") }
+    var password by remember { mutableStateOf("marshel123") }
     var isLoading by remember { mutableStateOf(false) }
     var loginErrorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -188,7 +222,7 @@ fun LoginScreen(onLoginSuccess: (User) -> Unit, onError: (String) -> Unit) {
         // Credenciales de demo
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            "Demo: us1@gmail.com / 4321",
+            "Demo: marshel@tecba.com / marshel123",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -198,12 +232,9 @@ fun LoginScreen(onLoginSuccess: (User) -> Unit, onError: (String) -> Unit) {
     if (isLoading) {
         LaunchedEffect(Unit) {
             try {
-                println("🔐 Iniciando proceso de login...")
                 val user = userLogin(email, password)
-                println("✅ Login exitoso, usuario: ${user.nombre}, ID: ${user.id}")
                 onLoginSuccess(user)
             } catch (e: Exception) {
-                println("❌ Error en login: ${e.message}")
                 loginErrorMessage = e.message ?: "Error desconocido"
                 isLoading = false
             }
@@ -213,20 +244,21 @@ fun LoginScreen(onLoginSuccess: (User) -> Unit, onError: (String) -> Unit) {
 
 // Pantalla de Productos
 @Composable
-fun ProductosScreen(currentUser: User, onLogout: () -> Unit, onError: (String) -> Unit) {
+fun ProductosScreen(
+    currentUser: User,
+    onLogout: () -> Unit,
+    onProductoClick: (Int) -> Unit,
+    onError: (String) -> Unit
+) {
     var productos by remember { mutableStateOf<List<Producto>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(currentUser) {
         try {
-            println("🛍️ Cargando productos para usuario ID: ${currentUser.id}")
-            productos = loadProductosFromAPI(currentUser.id)
-            println("✅ Productos cargados: ${productos.size}")
-            isLoading = false
+            productos = loadProductosFromAPI()
         } catch (e: Exception) {
-            println("❌ Error cargando productos: ${e.message}")
-            errorMessage = e.message
+            onError(e.message ?: "Error al cargar productos")
+        } finally {
             isLoading = false
         }
     }
@@ -237,7 +269,7 @@ fun ProductosScreen(currentUser: User, onLogout: () -> Unit, onError: (String) -
                 title = { Text("ROG Store - Productos") },
                 actions = {
                     TextButton(onClick = onLogout) {
-                        Text("Salir", color = MaterialTheme.colorScheme.onPrimary)
+                        Text("Salir", color = Color.White)
                     }
                 }
             )
@@ -277,22 +309,6 @@ fun ProductosScreen(currentUser: User, onLogout: () -> Unit, onError: (String) -
                         }
                     }
                 }
-                errorMessage != null -> {
-                    Box(modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(errorMessage ?: "Error",
-                                color = MaterialTheme.colorScheme.error)
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(onClick = {
-                                isLoading = true
-                                errorMessage = null
-                            }) {
-                                Text("Reintentar")
-                            }
-                        }
-                    }
-                }
                 productos.isEmpty() -> {
                     Box(modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center) {
@@ -305,7 +321,10 @@ fun ProductosScreen(currentUser: User, onLogout: () -> Unit, onError: (String) -
                         contentPadding = PaddingValues(16.dp)
                     ) {
                         items(productos) { producto ->
-                            ProductoCard(producto = producto)
+                            ProductoCard(
+                                producto = producto,
+                                onClick = { onProductoClick(producto.id) }
+                            )
                             Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
@@ -315,10 +334,93 @@ fun ProductosScreen(currentUser: User, onLogout: () -> Unit, onError: (String) -
     }
 }
 
+// Pantalla de Detalle de Producto
+@Composable
+fun ProductoDetailScreen(productId: Int, onBack: () -> Unit) {
+    var producto by remember { mutableStateOf<Producto?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(productId) {
+        try {
+            isLoading = true
+            producto = loadSingleProductFromAPI(productId)
+        } catch (e: Exception) {
+            errorMessage = e.message
+        } finally {
+            isLoading = false
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(producto?.nombre ?: "Cargando...") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+                    }
+                }
+            )
+        }
+    ) { innerPadding ->
+        Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+            when {
+                isLoading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+                errorMessage != null -> {
+                    Text(
+                        text = "Error: ${errorMessage}",
+                        modifier = Modifier.align(Alignment.Center),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                producto != null -> {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(producto!!.nombre, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        if (!producto!!.imagen_url.isNullOrBlank()) {
+                            AsyncImage(
+                                model = producto!!.imagen_url,
+                                contentDescription = "Imagen de ${producto!!.nombre}",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(250.dp)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+
+                        Text(
+                            "$${producto!!.precio}",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            "Categoría: ${producto!!.categoria_nombre ?: "N/A"}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(producto!!.descripción, style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            }
+        }
+    }
+}
+
 // Tarjeta de producto
 @Composable
-fun ProductoCard(producto: Producto) {
-    Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(4.dp)) {
+fun ProductoCard(producto: Producto, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(producto.nombre,
                 style = MaterialTheme.typography.titleLarge,
@@ -338,7 +440,7 @@ fun ProductoCard(producto: Producto) {
 // Función de login - VERSIÓN SIMPLIFICADA
 suspend fun userLogin(email: String, password: String): User = withContext(Dispatchers.IO) {
     try {
-        val url = "http://192.168.0.0:8080/admin-panel/php/login_user.php" // IP de ejemplo
+        val url = "http://192.168.1.3:8000/admin-panel/php/login_user.php"
         val jsonInputString = """{"email":"$email","password":"$password"}"""
 
         val connection = URL(url).openConnection() as java.net.HttpURLConnection
@@ -357,7 +459,11 @@ suspend fun userLogin(email: String, password: String): User = withContext(Dispa
         val jsonText = connection.inputStream.bufferedReader().use { it.readText() }
 
         val gson = Gson()
-        val response = gson.fromJson(jsonText, LoginResponse::class.java)
+        val response = try {
+            gson.fromJson(jsonText, LoginResponse::class.java)
+        } catch (e: Exception) {
+            throw Exception("Respuesta inválida del servidor: $jsonText")
+        }
 
         if (response.success && response.user != null) {
             response.user
@@ -365,23 +471,36 @@ suspend fun userLogin(email: String, password: String): User = withContext(Dispa
             throw Exception(response.message ?: "Error en el login")
         }
     } catch (e: Exception) {
-        throw Exception("Error de conexión: ${e.message}")
+        throw Exception("Error de conexión o login: ${e.message}")
     }
 }
 
-// Función para obtener productos
-suspend fun loadProductosFromAPI(userId: Int): List<Producto> = withContext(Dispatchers.IO) {
+// Función para obtener todos los productos
+suspend fun loadProductosFromAPI(): List<Producto> = withContext(Dispatchers.IO) {
     try {
-        val url = "http://192.168.0.0:8080/admin-panel/php/products.php?user_id=$userId" // IP de ejemplo
+        val url = "http://192.168.1.3:8000/admin-panel/php/products.php"
         val jsonText = URL(url).readText()
-
-        val gson = Gson()
-        val response = gson.fromJson(jsonText, ProductoResponse::class.java)
-
+        val response = Gson().fromJson(jsonText, ProductoResponse::class.java)
         if (response.success) {
             response.data ?: emptyList()
         } else {
             throw Exception(response.message ?: "Error al obtener productos")
+        }
+    } catch (e: Exception) {
+        throw Exception("No se pudo conectar: ${e.message}")
+    }
+}
+
+// Función para obtener un solo producto
+suspend fun loadSingleProductFromAPI(productId: Int): Producto = withContext(Dispatchers.IO) {
+    try {
+        val url = "http://192.168.1.3:8000/admin-panel/php/products.php?id=$productId"
+        val jsonText = URL(url).readText()
+        val response = Gson().fromJson(jsonText, SingleProductoResponse::class.java)
+        if (response.success && response.data != null) {
+            response.data
+        } else {
+            throw Exception(response.message ?: "Producto no encontrado")
         }
     } catch (e: Exception) {
         throw Exception("No se pudo conectar: ${e.message}")

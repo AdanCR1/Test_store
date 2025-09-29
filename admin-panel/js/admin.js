@@ -66,7 +66,7 @@ function adminLogin() {
     const email = document.getElementById('adminEmail').value;
     const password = document.getElementById('adminPassword').value;
 
-    fetch('php/login.php', {
+    fetch('/admin-panel/php/login.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -98,7 +98,7 @@ function logout() {
 // Cargar datos del dashboard
 function loadDashboardData() {
     // Cargar productos
-    fetch('php/products.php')
+    fetch('/admin-panel/php/products.php')
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -108,7 +108,7 @@ function loadDashboardData() {
         });
 
     // Cargar usuarios
-    fetch('php/users.php')
+    fetch('/admin-panel/php/users.php')
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -119,7 +119,7 @@ function loadDashboardData() {
 
 // Cargar productos
 function loadProducts() {
-    fetch('php/products.php')
+    fetch('/admin-panel/php/products.php')
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -158,7 +158,7 @@ function renderProductsTable() {
 
 // Cargar usuarios
 function loadUsers() {
-    fetch('php/users.php')
+    fetch('/admin-panel/php/users.php')
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -207,10 +207,11 @@ function addProduct() {
         nombre: document.getElementById('productName').value,
         precio: document.getElementById('productPrice').value,
         descripcion: document.getElementById('productDescription').value,
-        categoria_id: document.getElementById('productCategory').value
+        categoria_id: document.getElementById('productCategory').value,
+        imagen_url: document.getElementById('productImageUrl').value
     };
 
-    fetch('php/products.php', {
+    fetch('/admin-panel/php/products.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -236,7 +237,7 @@ function addProduct() {
 // Eliminar producto
 function deleteProduct(id) {
     if (confirm('¿Estás seguro de que quieres eliminar este producto?')) {
-        fetch(`php/products.php?id=${id}`, {
+        fetch(`/admin-panel/php/products.php?id=${id}`, {
             method: 'DELETE'
         })
         .then(response => response.json())
@@ -258,7 +259,7 @@ function deleteProduct(id) {
 // Eliminar usuario
 function deleteUser(id) {
     if (confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
-        fetch(`php/users.php?id=${id}`, {
+        fetch(`/admin-panel/php/users.php?id=${id}`, {
             method: 'DELETE'
         })
         .then(response => response.json())

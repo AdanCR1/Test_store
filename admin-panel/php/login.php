@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute([$email]);
     $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($admin && $password === $admin['contraseña']) {
+    if ($admin && $password === $admin['password']) {
         session_start();
         $_SESSION['admin_id'] = $admin['id'];
         $_SESSION['admin_name'] = $admin['nombre'];

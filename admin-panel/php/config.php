@@ -4,10 +4,10 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
 header('Access-Control-Allow-Headers: Content-Type');
 
-$host = '127.0.0.1:8080';
+$host = '127.0.0.1:3306';
 $dbname = 'tienda_rog';
-$username = 'root';
-$password = '';
+$username = 'asus_admin';
+$password = 'password123';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
