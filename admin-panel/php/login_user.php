@@ -25,17 +25,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // NOTA: La comparación de contraseñas en texto plano es insegura.
     // Esto se hace así para ser consistente con el resto del código del proyecto.
     if ($user && $password === $user['password']) {
+        // Iniciar una sesión para el usuario de la app
+        session_start();
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['is_admin'] = (bool)($user['is_admin'] ?? false);
+
         // En una app real, aquí se generaría un token de sesión (ej. JWT)
         echo json_encode([
             'success' => true,
             'message' => 'Login de usuario exitoso',
-            'user' => [ // No enviar la contraseña de vuelta al cliente
-                'id' => $user['id'],
-                'nombre' => $user['nombre'],
-                'email' => $user['email'],
-                'fecha_registro' => $user['fecha_registro']
-            ]
-        ]);
+                            'user' => [ // No enviar la contraseña de vuelta al cliente
+                                'id' => $user['id'],
+                                'nombre' => $user['nombre'],
+                                'email' => $user['email'],
+                                'fecha_registro' => $user['fecha_registro'],
+                                'is_admin' => (bool)($user['is_admin'] ?? false)
+                            ]        ]);
     } else {
         echo json_encode([
             'success' => false,

@@ -1,9 +1,31 @@
 <?php
 require_once 'config.php';
 
+session_start();
+
+// Protect write methods (POST, PUT, DELETE)
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    // The user must be either a web admin (admin_id is set)
+    // OR an app user with admin privileges (is_admin is true)
+    $isWebAdmin = isset($_SESSION['admin_id']);
+    $isAppAdmin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true;
+
+    if (!$isWebAdmin && !$isAppAdmin) {
+        header('Content-Type: application/json');
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'No autorizado para realizar esta acción']);
+        exit;
+    }
+}
+
 // GET - Obtener productos (todos o por ID)
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    if (isset($_GET['id'])) {
+    if (isset($_GET['action']) && $_GET['action'] === 'getCategories') {
+        // Obtener todas las categorías
+        $stmt = $pdo->query("SELECT * FROM categorias ORDER BY nombre ASC");
+        $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(['success' => true, 'data' => $categories]);
+    } else if (isset($_GET['id'])) {
         // Obtener un solo producto por ID
         $id = $_GET['id'];
         $stmt = $pdo->prepare("
@@ -39,9 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $nombre = $data['nombre'] ?? '';
     $precio = $data['precio'] ?? 0;
-    $descripcion = $data['descripcion'] ?? '';
+    $descripción = $data['descripción'] ?? '';
+    $stock = $data['stock'] ?? 0;
     $imagen_url = $data['imagen_url'] ?? null;
-    $categoria_nombre = $data['categoria_id'] ?? 'General'; // Recibimos un nombre de categoría
+    $categoria_nombre = $data['categoria_id'] ?? 'General';
 
     // Buscar el ID de la categoría. Si no existe, la creamos.
     $stmt_cat = $pdo->prepare("SELECT id FROM categorias WHERE nombre = ?");
@@ -56,9 +79,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $categoria_id_final = $pdo->lastInsertId();
     }
 
-    $stmt = $pdo->prepare("INSERT INTO productos (nombre, precio, descripción, imagen_url, categoria_id) VALUES (?, ?, ?, ?, ?)");
+    $stmt = $pdo->prepare("INSERT INTO productos (nombre, precio, descripción, stock, imagen_url, categoria_id) VALUES (?, ?, ?, ?, ?, ?)");
 
-    if ($stmt->execute([$nombre, $precio, $descripcion, $imagen_url, $categoria_id_final])) {
+    if ($stmt->execute([$nombre, $precio, $descripción, $stock, $imagen_url, $categoria_id_final])) {
         echo json_encode(['success' => true, 'message' => 'Producto creado exitosamente']);
     } else {
         echo json_encode(['success' => false, 'message' => 'Error al crear producto']);
@@ -72,7 +95,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
     $id = $data['id'] ?? 0;
     $nombre = $data['nombre'] ?? '';
     $precio = $data['precio'] ?? 0;
-    $descripcion = $data['descripcion'] ?? '';
+    $descripción = $data['descripción'] ?? '';
+    $stock = $data['stock'] ?? 0;
     $imagen_url = $data['imagen_url'] ?? null;
     $categoria_nombre = $data['categoria_id'] ?? 'General'; // Usar nombre como en POST
 
@@ -89,9 +113,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
         $categoria_id_final = $pdo->lastInsertId();
     }
 
-    $stmt = $pdo->prepare("UPDATE productos SET nombre = ?, precio = ?, descripción = ?, imagen_url = ?, categoria_id = ? WHERE id = ?");
+    $stmt = $pdo->prepare("UPDATE productos SET nombre = ?, precio = ?, descripción = ?, stock = ?, imagen_url = ?, categoria_id = ? WHERE id = ?");
 
-    if ($stmt->execute([$nombre, $precio, $descripcion, $imagen_url, $categoria_id_final, $id])) {
+    if ($stmt->execute([$nombre, $precio, $descripción, $stock, $imagen_url, $categoria_id_final, $id])) {
         echo json_encode(['success' => true, 'message' => 'Producto actualizado exitosamente']);
     } else {
         echo json_encode(['success' => false, 'message' => 'Error al actualizar producto']);
