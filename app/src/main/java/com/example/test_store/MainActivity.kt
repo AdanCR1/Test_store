@@ -32,6 +32,9 @@ import com.example.test_store.ui.screens.LoginViewModel
 import com.example.test_store.ui.screens.LoginViewModelFactory
 import com.example.test_store.ui.screens.ProductDetailViewModel
 import com.example.test_store.ui.screens.ProductDetailViewModelFactory
+import com.example.test_store.ui.screens.RegisterScreen
+import com.example.test_store.ui.screens.RegisterViewModel
+import com.example.test_store.ui.screens.RegisterViewModelFactory
 import com.example.test_store.data.model.User
 import com.example.test_store.data.model.Producto
 import com.example.test_store.data.model.LoginResponse
@@ -71,14 +74,22 @@ fun AppNavigation() {
     val loginViewModel: LoginViewModel = viewModel(factory = LoginViewModelFactory(repository))
     val productsViewModel: ProductsViewModel = viewModel(factory = ProductsViewModelFactory(repository))
     val productDetailViewModel: ProductDetailViewModel = viewModel(factory = ProductDetailViewModelFactory(repository))
+    val registerViewModel: RegisterViewModel = viewModel(factory = RegisterViewModelFactory(repository)) // New ViewModel
 
     var currentUser by remember { mutableStateOf<User?>(null) }
     var selectedProductId by remember { mutableStateOf<Int?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showRegisterScreen by remember { mutableStateOf(false) } // New state for registration
+    var prefillEmail by remember { mutableStateOf("") } // New state for pre-filling login
+    var prefillPassword by remember { mutableStateOf("") } // New state for pre-filling login
 
     // Back handler para la pantalla de detalle
-    BackHandler(enabled = selectedProductId != null) {
-        selectedProductId = null
+    BackHandler(enabled = selectedProductId != null || showRegisterScreen) { // Updated BackHandler
+        if (selectedProductId != null) {
+            selectedProductId = null
+        } else if (showRegisterScreen) {
+            showRegisterScreen = false
+        }
     }
 
     // Mostrar error global si ocurre
@@ -104,12 +115,28 @@ fun AppNavigation() {
             }
         }
     } else if (currentUser == null) {
-        LoginScreen(
-            loginViewModel = loginViewModel,
-            onLoginSuccess = { user ->
-                currentUser = user
-            }
-        )
+        if (showRegisterScreen) {
+            RegisterScreen(
+                registerViewModel = registerViewModel,
+                onRegistrationSuccess = { email, password -> // Updated lambda signature
+                    showRegisterScreen = false // Go back to login after successful registration
+                    registerViewModel.resetState() // Reset register ViewModel state
+                    prefillEmail = email // Set prefill email
+                    prefillPassword = password // Set prefill password
+                },
+                onBack = { showRegisterScreen = false }
+            )
+        } else {
+            LoginScreen(
+                loginViewModel = loginViewModel,
+                onLoginSuccess = { user ->
+                    currentUser = user
+                },
+                onNavigateToRegister = { showRegisterScreen = true }, // Navigate to register
+                prefillEmail = prefillEmail, // Pass prefill email
+                prefillPassword = prefillPassword // Pass prefill password
+            )
+        }
     } else if (selectedProductId != null) {
         ProductoDetailScreen(
             productId = selectedProductId!!,

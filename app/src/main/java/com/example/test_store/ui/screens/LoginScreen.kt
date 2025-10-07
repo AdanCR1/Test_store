@@ -15,6 +15,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -35,10 +36,13 @@ import com.example.test_store.ui.theme.Test_storeTheme
 @Composable
 fun LoginScreen(
     loginViewModel: LoginViewModel,
-    onLoginSuccess: (User) -> Unit
+    onLoginSuccess: (User) -> Unit,
+    onNavigateToRegister: () -> Unit,
+    prefillEmail: String = "",
+    prefillPassword: String = ""
 ) {
-    var email by remember { mutableStateOf("marshel@tecba.com") }
-    var password by remember { mutableStateOf("marshel123") }
+    var email by remember { mutableStateOf(prefillEmail.ifEmpty { "marshel@tecba.com" }) }
+    var password by remember { mutableStateOf(prefillPassword.ifEmpty { "marshel123" }) }
 
     val uiState by loginViewModel.uiState.collectAsState()
     val loggedInUser by loginViewModel.loggedInUser.collectAsState()
@@ -134,6 +138,11 @@ fun LoginScreen(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+
+        Spacer(modifier = Modifier.height(16.dp))
+        TextButton(onClick = onNavigateToRegister) {
+            Text("¿No tienes cuenta? Regístrate aquí.")
+        }
     }
 }
 

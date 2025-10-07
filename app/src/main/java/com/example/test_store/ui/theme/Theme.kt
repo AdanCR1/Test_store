@@ -10,34 +10,53 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import com.example.test_store.ui.theme.PrimaryBlue
+import com.example.test_store.ui.theme.PrimaryDarkBlue
+import com.example.test_store.ui.theme.SecondaryGray
+import com.example.test_store.ui.theme.SecondaryDarkGray
+import com.example.test_store.ui.theme.TertiaryGreen
+import com.example.test_store.ui.theme.TertiaryDarkGreen
+import com.example.test_store.ui.theme.BackgroundLight
+import com.example.test_store.ui.theme.SurfaceWhite
+import com.example.test_store.ui.theme.TextDark
+import com.example.test_store.ui.theme.TextLight
+import com.example.test_store.ui.theme.ErrorRed
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = PrimaryDarkBlue,
+    onPrimary = TextLight,
+    secondary = SecondaryDarkGray,
+    onSecondary = TextLight,
+    tertiary = TertiaryDarkGreen,
+    onTertiary = TextLight,
+    background = TextDark,
+    onBackground = TextLight,
+    surface = TextDark,
+    onSurface = TextLight,
+    error = ErrorRed,
+    onError = TextLight
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = PrimaryBlue,
+    onPrimary = TextLight,
+    secondary = SecondaryGray,
+    onSecondary = TextLight,
+    tertiary = TertiaryGreen,
+    onTertiary = TextLight,
+    background = BackgroundLight,
+    onBackground = TextDark,
+    surface = SurfaceWhite,
+    onSurface = TextDark,
+    error = ErrorRed,
+    onError = TextLight
 )
 
 @Composable
 fun Test_storeTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
