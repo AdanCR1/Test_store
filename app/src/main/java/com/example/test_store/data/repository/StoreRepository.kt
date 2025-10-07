@@ -6,6 +6,9 @@ import com.example.test_store.data.model.ProductoResponse
 import com.example.test_store.data.model.SingleProductoResponse
 import com.example.test_store.data.model.RegisterRequest
 import com.example.test_store.data.model.User
+import com.example.test_store.data.model.Category
+import com.example.test_store.data.model.CategoryResponse
+import com.example.test_store.data.model.ProductUpdateRequest
 import com.example.test_store.BuildConfig
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
@@ -122,6 +125,81 @@ class StoreRepository {
             }
         } catch (e: Exception) {
             throw Exception("No se pudo conectar: ${e.message}")
+        }
+    }
+
+    suspend fun getCategories(): List<Category> = withContext(Dispatchers.IO) {
+        try {
+            val url = "$BASE_URL/products.php?action=getCategories"
+            val jsonText = URL(url).readText()
+            val response = gson.fromJson(jsonText, CategoryResponse::class.java)
+            if (response.success) {
+                response.data ?: emptyList()
+            } else {
+                throw Exception(response.message ?: "Error al obtener categorías")
+            }
+        } catch (e: Exception) {
+            throw Exception("No se pudo conectar: ${e.message}")
+        }
+    }
+
+    suspend fun createProduct(product: ProductUpdateRequest): Boolean = withContext(Dispatchers.IO) {
+        val url = "$BASE_URL/products.php"
+        val jsonInputString = gson.toJson(product)
+
+        val connection = URL(url).openConnection() as java.net.HttpURLConnection
+        connection.apply {
+            requestMethod = "POST"
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("Accept", "application/json")
+            doOutput = true
+            connectTimeout = 15000
+            readTimeout = 15000
+        }
+
+        try {
+            connection.outputStream.bufferedWriter().use { it.write(jsonInputString) }
+            val jsonText = connection.inputStream.bufferedReader().use { it.readText() }
+            // Assuming a simple success/message response, not returning a full object
+            val response = gson.fromJson(jsonText, Map::class.java)
+
+            if (response["success"] == true) {
+                true
+            } else {
+                throw Exception(response["message"]?.toString() ?: "Error al crear el producto")
+            }
+        } catch (e: Exception) {
+            // Handle network/parsing errors
+            throw Exception("Error de conexión o de servidor: ${e.message}")
+        }
+    }
+
+    suspend fun updateProduct(product: ProductUpdateRequest): Boolean = withContext(Dispatchers.IO) {
+        val url = "$BASE_URL/products.php"
+        val jsonInputString = gson.toJson(product)
+
+        val connection = URL(url).openConnection() as java.net.HttpURLConnection
+        connection.apply {
+            requestMethod = "PUT"
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("Accept", "application/json")
+            doOutput = true
+            connectTimeout = 15000
+            readTimeout = 15000
+        }
+
+        try {
+            connection.outputStream.bufferedWriter().use { it.write(jsonInputString) }
+            val jsonText = connection.inputStream.bufferedReader().use { it.readText() }
+            val response = gson.fromJson(jsonText, Map::class.java)
+
+            if (response["success"] == true) {
+                true
+            } else {
+                throw Exception(response["message"]?.toString() ?: "Error al actualizar el producto")
+            }
+        } catch (e: Exception) {
+            throw Exception("Error de conexión o de servidor: ${e.message}")
         }
     }
 }
