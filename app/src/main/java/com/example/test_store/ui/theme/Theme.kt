@@ -1,72 +1,43 @@
 package com.example.test_store.ui.theme
 
 import android.app.Activity
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
-import com.example.test_store.ui.theme.PrimaryBlue
-import com.example.test_store.ui.theme.PrimaryDarkBlue
-import com.example.test_store.ui.theme.SecondaryGray
-import com.example.test_store.ui.theme.SecondaryDarkGray
-import com.example.test_store.ui.theme.TertiaryGreen
-import com.example.test_store.ui.theme.TertiaryDarkGreen
-import com.example.test_store.ui.theme.BackgroundLight
-import com.example.test_store.ui.theme.SurfaceWhite
-import com.example.test_store.ui.theme.TextDark
-import com.example.test_store.ui.theme.TextLight
-import com.example.test_store.ui.theme.ErrorRed
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
-private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryDarkBlue,
-    onPrimary = TextLight,
-    secondary = SecondaryDarkGray,
-    onSecondary = TextLight,
-    tertiary = TertiaryDarkGreen,
-    onTertiary = TextLight,
-    background = TextDark,
-    onBackground = TextLight,
-    surface = TextDark,
-    onSurface = TextLight,
+private val RogDarkColorScheme = darkColorScheme(
+    primary = RogRed,
+    onPrimary = OffWhite,
+    secondary = CyberPink,
+    onSecondary = OffWhite,
+    tertiary = LightGray,
+    onTertiary = SubtleGray,
+    background = DarkCharcoal,
+    onBackground = OffWhite,
+    surface = MediumGray,
+    onSurface = OffWhite,
+    surfaceVariant = LightGray,
+    onSurfaceVariant = SubtleGray,
     error = ErrorRed,
-    onError = TextLight
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = PrimaryBlue,
-    onPrimary = TextLight,
-    secondary = SecondaryGray,
-    onSecondary = TextLight,
-    tertiary = TertiaryGreen,
-    onTertiary = TextLight,
-    background = BackgroundLight,
-    onBackground = TextDark,
-    surface = SurfaceWhite,
-    onSurface = TextDark,
-    error = ErrorRed,
-    onError = TextLight
+    onError = OffWhite
 )
 
 @Composable
 fun Test_storeTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+    val colorScheme = RogDarkColorScheme
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            window.statusBarColor = colorScheme.background.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
         }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
     }
 
     MaterialTheme(

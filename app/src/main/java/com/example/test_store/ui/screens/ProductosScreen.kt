@@ -40,7 +40,7 @@ fun ProductosScreen(
                 title = { Text("ROG Store - Productos") },
                 actions = {
                     TextButton(onClick = onLogout) {
-                        Text("Salir", color = Color.White)
+                        Text("Salir", color = MaterialTheme.colorScheme.primary)
                     }
                 }
             )

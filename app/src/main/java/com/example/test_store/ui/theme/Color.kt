@@ -2,26 +2,14 @@ package com.example.test_store.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Primary colors
-val PrimaryBlue = Color(0xFF007BFF)
-val PrimaryDarkBlue = Color(0xFF0056B3) // A darker shade for pressed states
+val RogRed = Color(0xFFE60023) // A strong, iconic red
+val CyberPink = Color(0xFFFF00C7) // A vibrant accent for highlights
 
-// Secondary colors
-val SecondaryGray = Color(0xFF6C757D)
-val SecondaryDarkGray = Color(0xFF545B62)
+val DarkCharcoal = Color(0xFF1A1A1A) // Main background
+val MediumGray = Color(0xFF2C2C2C)   // For surfaces like Cards
+val LightGray = Color(0xFF404040)    // For secondary elements like disabled buttons
 
-// Tertiary (Accent/Success) colors
-val TertiaryGreen = Color(0xFF28A745)
-val TertiaryDarkGreen = Color(0xFF1E7E34)
+val OffWhite = Color(0xFFF5F5F5)     // Primary text color
+val SubtleGray = Color(0xFFAAAAAA)   // Secondary text color
 
-// Background and Surface
-val BackgroundLight = Color(0xFFF8F9FA)
-val SurfaceWhite = Color(0xFFFFFFFF)
-
-// Text colors
-val TextDark = Color(0xFF212529)
-val TextLight = Color(0xFFFFFFFF) // For text on dark backgrounds
-
-// Error colors
-val ErrorRed = Color(0xFFDC3545)
-val ErrorDarkRed = Color(0xFFB02A37)
+val ErrorRed = Color(0xFFFF5555)     // A noticeable error color on dark backgrounds
