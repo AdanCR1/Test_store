@@ -2,7 +2,7 @@
 
 ## 1. Requisitos previos
 
-Asegúrate de tener instalado en tu sistema:
+Asegúrate de tener instalado en tu sistema o usar `xampp` para correr php y mysql:
 
 - **PHP**  
 - **php-mysql** (extensión para conectar PHP con MySQL)
@@ -24,23 +24,33 @@ hostname -I
 ```
 La IP que aparece (por ejemplo, `192.168.1.3`) es la que debes usar para acceder al backend desde la app móvil.
 
-## 3. Cambiar la IP en la app (MainActivity.kt)
+## 3. Configurar la URL de la API
+
+La URL base de la API ahora se gestiona de forma centralizada como una variable de entorno, para evitar tener que cambiarla en múltiples sitios.
 
 Abre el archivo:
 
 ```
-app/src/main/java/com/example/test_store/MainActivity.kt
+app/build.gradle.kts
 ```
 
-Busca las líneas donde se usa la IP para las peticiones HTTP, por ejemplo:
+Busca el bloque `buildTypes` y cambia el valor de `API_BASE_URL` por la URL de tu backend (obtenida en el paso 2).
 
 ```kotlin
-val url = "http://192.168.1.3:8000/admin-panel/php/products.php"
+    buildTypes {
+        release {
+            // ...
+            // URL para la versión de producción de la app
+            buildConfigField("String", "API_BASE_URL", "\"https://tu-servidor.com/api\"")
+        }
+        getByName("debug") {
+            // URL para desarrollo y pruebas locales
+            buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.6:8000/admin-panel/php\"")
+        }
+    }
 ```
 
-Reemplaza `192.168.1.3` por tu IP local obtenida en el paso 2.
-
-Haz esto en todas las funciones que hagan peticiones al backend (login, productos, etc).
+**Importante:** Después de modificar este archivo, Android Studio te pedirá sincronizar el proyecto. Haz clic en **"Sync Now"**. Este paso es obligatorio para que la app pueda usar la nueva URL.
 
 ## 4. Ejecutar las queries de la base de datos
 
