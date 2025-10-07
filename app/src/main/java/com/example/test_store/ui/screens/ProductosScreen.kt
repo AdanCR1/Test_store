@@ -1,19 +1,19 @@
 package com.example.test_store.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.test_store.data.model.Category
 import com.example.test_store.data.model.User
 import com.example.test_store.ui.components.ProductoCard
 
@@ -25,30 +25,57 @@ fun ProductosScreen(
     onProductoClick: (Int) -> Unit,
     onError: (String) -> Unit,
     productsViewModel: ProductsViewModel,
-    onNavigateToAdd: () -> Unit // New callback
+    onNavigateToAdd: () -> Unit
 ) {
+    var showLogoutDialog by remember { mutableStateOf(false) }
     val uiState by productsViewModel.uiState.collectAsState()
 
-    // Handle error state
     if (uiState.error != null) {
         onError(uiState.error!!)
+    }
+
+    // Logout Confirmation Dialog
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("Confirmar Cierre de Sesión") },
+            text = { Text("¿Estás seguro de que quieres salir?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLogoutDialog = false
+                        onLogout()
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Salir")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("ROG Store - Productos") },
+                title = { Text("ROG Store") },
                 actions = {
-                    TextButton(onClick = onLogout) {
-                        Text("Salir", color = Color.White)
+                    TextButton(onClick = { showLogoutDialog = true }) { // Updated onClick
+                        Text("Salir", color = MaterialTheme.colorScheme.primary)
                     }
                 }
             )
         },
         floatingActionButton = {
-            // Show FAB only for admins
             if (currentUser.isAdmin) {
-                FloatingActionButton(onClick = onNavigateToAdd) {
+                FloatingActionButton(
+                    onClick = onNavigateToAdd,
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
                     Icon(Icons.Default.Add, contentDescription = "Añadir Producto")
                 }
             }
@@ -59,11 +86,15 @@ fun ProductosScreen(
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            // Info del usuario
+            // User Info Card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("Bienvenido, ${currentUser.nombre}",
@@ -72,7 +103,6 @@ fun ProductosScreen(
                     Text(currentUser.email,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    // Show admin status
                     if(currentUser.isAdmin) {
                         Text("Rol: Administrador",
                             style = MaterialTheme.typography.bodySmall,
@@ -81,21 +111,27 @@ fun ProductosScreen(
                 }
             }
 
+            // Category Filters
+            CategoryFilters(
+                categories = uiState.categories,
+                selectedCategory = uiState.selectedCategory,
+                onCategorySelected = { category ->
+                    productsViewModel.filterByCategory(category)
+                }
+            )
+
+            // Product List
             when {
                 uiState.isLoading -> {
-                    Box(modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator()
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text("Cargando productos...")
-                        }
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Cargando...")
                     }
                 }
                 uiState.products.isEmpty() -> {
-                    Box(modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center) {
-                        Text("No hay productos disponibles")
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("No hay productos en esta categoría.")
                     }
                 }
                 else -> {
@@ -111,6 +147,61 @@ fun ProductosScreen(
                             Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CategoryFilters(
+    categories: List<Category>,
+    selectedCategory: Category?,
+    onCategorySelected: (Category?) -> Unit
+) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // "All" button
+        item {
+            val isSelected = selectedCategory == null
+            if (isSelected) {
+                Button(
+                    onClick = { onCategorySelected(null) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Text("Todos")
+                }
+            } else {
+                OutlinedButton(
+                    onClick = { onCategorySelected(null) },
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("Todos", color = MaterialTheme.colorScheme.primary)
+                }
+            }
+        }
+        // Category buttons
+        items(categories) { category ->
+            val isSelected = selectedCategory?.id == category.id
+            if (isSelected) {
+                Button(
+                    onClick = { onCategorySelected(category) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Text(category.nombre)
+                }
+            } else {
+                OutlinedButton(
+                    onClick = { onCategorySelected(category) },
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                ) {
+                    Text(category.nombre, color = MaterialTheme.colorScheme.primary)
                 }
             }
         }

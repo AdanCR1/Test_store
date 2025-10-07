@@ -202,4 +202,30 @@ class StoreRepository {
             throw Exception("Error de conexión o de servidor: ${e.message}")
         }
     }
+
+    suspend fun deleteProduct(productId: Int): Boolean = withContext(Dispatchers.IO) {
+        val url = "$BASE_URL/products.php?id=$productId"
+
+        val connection = URL(url).openConnection() as java.net.HttpURLConnection
+        connection.apply {
+            requestMethod = "DELETE"
+            connectTimeout = 10000
+            readTimeout = 10000
+        }
+
+        try {
+            // For DELETE, the response body might be read from errorStream if status code is not 2xx
+            val stream = if (connection.responseCode < 400) connection.inputStream else connection.errorStream
+            val jsonText = stream.bufferedReader().use { it.readText() }
+            val response = gson.fromJson(jsonText, Map::class.java)
+
+            if (response["success"] == true) {
+                true
+            } else {
+                throw Exception(response["message"]?.toString() ?: "Error al eliminar el producto")
+            }
+        } catch (e: Exception) {
+            throw Exception("Error de conexión o de servidor: ${e.message}")
+        }
+    }
 }

@@ -140,7 +140,11 @@ fun AppNavigation() {
             currentUser = currentUser,
             onBack = { selectedProductId = null },
             productDetailViewModel = productDetailViewModel,
-            onNavigateToEdit = { productId -> editingProductId = productId }
+            onNavigateToEdit = { productId -> editingProductId = productId },
+            onDeleteSuccess = {
+                selectedProductId = null
+                productsViewModel.loadProducts() // Refresh the list
+            }
         )
     } else {
         // --- Product List Flow (Default) ---

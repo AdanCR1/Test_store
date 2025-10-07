@@ -13,7 +13,10 @@ import kotlinx.coroutines.launch
 data class ProductDetailUiState(
     val product: Producto? = null,
     val isLoading: Boolean = true,
-    val error: String? = null
+    val error: String? = null,
+    val isDeleting: Boolean = false,
+    val deleteSuccess: Boolean = false,
+    val deleteError: String? = null
 )
 
 class ProductDetailViewModel(private val repository: StoreRepository) : ViewModel() {
@@ -23,12 +26,28 @@ class ProductDetailViewModel(private val repository: StoreRepository) : ViewMode
 
     fun loadProduct(productId: Int) {
         viewModelScope.launch {
-            _uiState.value = ProductDetailUiState(isLoading = true)
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, deleteError = null, deleteSuccess = false)
             try {
                 val product = repository.loadSingleProductFromAPI(productId)
-                _uiState.value = ProductDetailUiState(product = product, isLoading = false)
+                _uiState.value = _uiState.value.copy(product = product, isLoading = false)
             } catch (e: Exception) {
-                _uiState.value = ProductDetailUiState(error = e.message ?: "Error al cargar el producto", isLoading = false)
+                _uiState.value = _uiState.value.copy(error = e.message ?: "Error al cargar el producto", isLoading = false)
+            }
+        }
+    }
+
+    fun deleteProduct(productId: Int) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isDeleting = true, deleteError = null)
+            try {
+                val success = repository.deleteProduct(productId)
+                if (success) {
+                    _uiState.value = _uiState.value.copy(isDeleting = false, deleteSuccess = true)
+                } else {
+                    _uiState.value = _uiState.value.copy(isDeleting = false, deleteError = "No se pudo eliminar el producto.")
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isDeleting = false, deleteError = e.message ?: "Error desconocido")
             }
         }
     }
