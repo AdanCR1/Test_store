@@ -4,21 +4,12 @@ DROP TABLE IF EXISTS pedidos;
 DROP TABLE IF EXISTS carrito;
 DROP TABLE IF EXISTS productos;
 DROP TABLE IF EXISTS usuarios;
-DROP TABLE IF EXISTS administradores;
 DROP TABLE IF EXISTS categorias;
 DROP DATABASE IF EXISTS tienda_rog;
 
 -- Crear la base de datos
 CREATE DATABASE tienda_rog;
 USE tienda_rog;
-
--- Crear tabla administradores
-CREATE TABLE administradores (
-    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    rol VARCHAR(50) NOT NULL
-);
 
 -- Crear tabla categorias
 CREATE TABLE categorias (
@@ -46,7 +37,8 @@ CREATE TABLE usuarios (
     password VARCHAR(255) NOT NULL,
     direccion TEXT,
     telefono VARCHAR(20),
-    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
+    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_admin BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- Crear tabla carrito de compras
@@ -84,10 +76,6 @@ CREATE TABLE detalle_pedidos (
     FOREIGN KEY (producto_id) REFERENCES productos(id)
 );
 
--- Insertar datos en administradores
-INSERT INTO administradores (email, password, rol) VALUES
-('admin@admin.com', 'admin123', 'admin');
-
 -- Insertar datos en categorias
 INSERT INTO categorias (id, nombre) VALUES
 (1, 'Laptops Gaming'),
@@ -114,21 +102,22 @@ INSERT INTO productos (id, nombre, descripción, precio, stock, categoria_id, im
 (14, 'ASUS ROG Phone 7 Ultimate', 'Teléfono gaming con Snapdragon 8 Gen 2, 16GB RAM, sistema de refrigeración avanzado.', 999.99, 15, 5, 'https://www.stuff.tv/wp-content/uploads/sites/2/2023/04/Asus-ROG-Phone-7-Ultimate-rear.jpg');
 
 -- Insertar datos en usuarios
-INSERT INTO usuarios (nombre, email, password, direccion, telefono) VALUES
-('Marshel', 'marshel@tecba.com', 'marshel123', 'Av. Principal 123, La Paz', '77123456'),
-('Adán', 'adan@tecba.com', 'adan123', 'Calle Comercio 456, La Paz', '77234567'),
-('Rommel', 'rommel@tecba.com', 'rommel123', 'Zona Central 789, La Paz', '77345678');
+INSERT INTO usuarios (nombre, email, password, direccion, telefono, is_admin) VALUES
+('Admin', 'admin@admin.com', 'admin123', 'Oficina Central', '66666666', TRUE),
+('Marshel', 'marshel@tecba.com', 'marshel123', 'Av. Principal 123, La Paz', '77123456', FALSE),
+('Adán', 'adan@tecba.com', 'adan123', 'Calle Comercio 456, La Paz', '77234567', FALSE),
+('Rommel', 'rommel@tecba.com', 'rommel123', 'Zona Central 789, La Paz', '77345678', FALSE);
 
 -- Insertar datos de ejemplo en carrito
 INSERT INTO carrito (usuario_id, producto_id, cantidad) VALUES
-(1, 1, 1),
-(1, 5, 2),
-(2, 3, 1);
+(2, 1, 1),
+(2, 5, 2),
+(3, 3, 1);
 
 -- Insertar pedidos de ejemplo
 INSERT INTO pedidos (usuario_id, total, estado, direccion_envio) VALUES
-(1, 1699.97, 'completado', 'Av. Principal 123, La Paz'),
-(2, 699.99, 'pendiente', 'Calle Comercio 456, La Paz');
+(2, 1699.97, 'completado', 'Av. Principal 123, La Paz'),
+(3, 699.99, 'pendiente', 'Calle Comercio 456, La Paz');
 
 -- Insertar detalle de pedidos
 INSERT INTO detalle_pedidos (pedido_id, producto_id, cantidad, precio_unitario, subtotal) VALUES

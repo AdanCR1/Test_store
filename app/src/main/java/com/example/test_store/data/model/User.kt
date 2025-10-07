@@ -9,5 +9,7 @@ data class User(
     val direccion: String?,
     val telefono: String?,
     @SerializedName("fecha_registro")
-    val fechaRegistro: String?
+    val fechaRegistro: String?,
+    @SerializedName("is_admin")
+    val isAdmin: Boolean = false
 )

@@ -1,6 +1,18 @@
 <?php
 require_once 'config.php';
 
+session_start();
+
+// Protect write methods (POST, PUT, DELETE)
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    if (!isset($_SESSION['admin_id'])) {
+        header('Content-Type: application/json');
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'No autorizado para realizar esta acción']);
+        exit;
+    }
+}
+
 // GET - Obtener productos (todos o por ID)
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['id'])) {

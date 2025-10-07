@@ -29,13 +29,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode([
             'success' => true,
             'message' => 'Login de usuario exitoso',
-            'user' => [ // No enviar la contraseña de vuelta al cliente
-                'id' => $user['id'],
-                'nombre' => $user['nombre'],
-                'email' => $user['email'],
-                'fecha_registro' => $user['fecha_registro']
-            ]
-        ]);
+                            'user' => [ // No enviar la contraseña de vuelta al cliente
+                                'id' => $user['id'],
+                                'nombre' => $user['nombre'],
+                                'email' => $user['email'],
+                                'fecha_registro' => $user['fecha_registro'],
+                                'is_admin' => (bool)($user['is_admin'] ?? false)
+                            ]        ]);
     } else {
         echo json_encode([
             'success' => false,
