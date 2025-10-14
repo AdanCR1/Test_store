@@ -1,4 +1,4 @@
-# Test_store - Guía rápida de configuración
+# ASUS ROG Store - Guía rápida de configuración
 
 ## 1. Requisitos previos
 
