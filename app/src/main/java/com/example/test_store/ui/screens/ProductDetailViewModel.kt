@@ -16,7 +16,10 @@ data class ProductDetailUiState(
     val error: String? = null,
     val isDeleting: Boolean = false,
     val deleteSuccess: Boolean = false,
-    val deleteError: String? = null
+    val deleteError: String? = null,
+    val isAddingToCart: Boolean = false,
+    val addToCartSuccess: Boolean = false,
+    val addToCartError: String? = null
 )
 
 class ProductDetailViewModel(private val repository: StoreRepository) : ViewModel() {
@@ -50,6 +53,26 @@ class ProductDetailViewModel(private val repository: StoreRepository) : ViewMode
                 _uiState.value = _uiState.value.copy(isDeleting = false, deleteError = e.message ?: "Error desconocido")
             }
         }
+    }
+
+    fun addToCart(productId: Int) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isAddingToCart = true, addToCartError = null, addToCartSuccess = false)
+            try {
+                val success = repository.addToCart(productId, 1) // Always add 1 quantity for now
+                if (success) {
+                    _uiState.value = _uiState.value.copy(isAddingToCart = false, addToCartSuccess = true)
+                } else {
+                    _uiState.value = _uiState.value.copy(isAddingToCart = false, addToCartError = "No se pudo añadir al carrito.")
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isAddingToCart = false, addToCartError = e.message ?: "Error desconocido")
+            }
+        }
+    }
+
+    fun resetAddToCartStatus() {
+        _uiState.value = _uiState.value.copy(addToCartSuccess = false, addToCartError = null)
     }
 }
 

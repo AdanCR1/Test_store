@@ -6,8 +6,8 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 $host = '127.0.0.1:3306';
 $dbname = 'tienda_rog';
-$username = 'asus_admin';
-$password = 'password123';
+$username = 'root';
+$password = '';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);

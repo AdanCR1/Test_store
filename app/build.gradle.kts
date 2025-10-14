@@ -25,10 +25,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.6:8000/admin-panel/php\"")
+            buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.7:8000/admin-panel/php\"")
         }
         getByName("debug") {
-            buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.6:8000/admin-panel/php\"")
+            buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.7:8000/admin-panel/php\"")
         }
     }
     compileOptions {

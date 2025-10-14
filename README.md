@@ -45,7 +45,7 @@ Busca el bloque `buildTypes` y cambia el valor de `API_BASE_URL` por la URL de t
         }
         getByName("debug") {
             // URL para desarrollo y pruebas locales
-            buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.6:8000/admin-panel/php\"")
+            buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.7:8000/admin-panel/php\"")
         }
     }
 ```

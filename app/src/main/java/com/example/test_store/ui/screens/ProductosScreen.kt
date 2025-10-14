@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,7 +26,8 @@ fun ProductosScreen(
     onProductoClick: (Int) -> Unit,
     onError: (String) -> Unit,
     productsViewModel: ProductsViewModel,
-    onNavigateToAdd: () -> Unit
+    onNavigateToAdd: () -> Unit,
+    onNavigateToCart: () -> Unit // New callback
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
     val uiState by productsViewModel.uiState.collectAsState()
@@ -34,28 +36,17 @@ fun ProductosScreen(
         onError(uiState.error!!)
     }
 
-    // Logout Confirmation Dialog
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
             title = { Text("Confirmar Cierre de Sesión") },
             text = { Text("¿Estás seguro de que quieres salir?") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        showLogoutDialog = false
-                        onLogout()
-                    },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
+                TextButton(onClick = { showLogoutDialog = false; onLogout() }, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
                     Text("Salir")
                 }
             },
-            dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("Cancelar")
-                }
-            }
+            dismissButton = { TextButton(onClick = { showLogoutDialog = false }) { Text("Cancelar") } }
         )
     }
 
@@ -63,8 +54,13 @@ fun ProductosScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("ROG Store") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateToCart) {
+                        Icon(Icons.Default.ShoppingCart, contentDescription = "Carrito")
+                    }
+                },
                 actions = {
-                    TextButton(onClick = { showLogoutDialog = true }) { // Updated onClick
+                    TextButton(onClick = { showLogoutDialog = true }) {
                         Text("Salir", color = MaterialTheme.colorScheme.primary)
                     }
                 }
@@ -72,55 +68,31 @@ fun ProductosScreen(
         },
         floatingActionButton = {
             if (currentUser.isAdmin) {
-                FloatingActionButton(
-                    onClick = onNavigateToAdd,
-                    containerColor = MaterialTheme.colorScheme.primary
-                ) {
+                FloatingActionButton(onClick = onNavigateToAdd, containerColor = MaterialTheme.colorScheme.primary) {
                     Icon(Icons.Default.Add, contentDescription = "Añadir Producto")
                 }
             }
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-        ) {
-            // User Info Card
+        Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                ),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Bienvenido, ${currentUser.nombre}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold)
-                    Text(currentUser.email,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Bienvenido, ${currentUser.nombre}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(currentUser.email, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if(currentUser.isAdmin) {
-                        Text("Rol: Administrador",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary)
+                        Text("Rol: Administrador", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
 
-            // Category Filters
-            CategoryFilters(
-                categories = uiState.categories,
-                selectedCategory = uiState.selectedCategory,
-                onCategorySelected = { category ->
-                    productsViewModel.filterByCategory(category)
-                }
-            )
+            CategoryFilters(uiState.categories, uiState.selectedCategory) { category ->
+                productsViewModel.filterByCategory(category)
+            }
 
-            // Product List
             when {
                 uiState.isLoading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -135,15 +107,9 @@ fun ProductosScreen(
                     }
                 }
                 else -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp)
-                    ) {
+                    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) {
                         items(uiState.products) { producto ->
-                            ProductoCard(
-                                producto = producto,
-                                onClick = { onProductoClick(producto.id) }
-                            )
+                            ProductoCard(producto, onClick = { onProductoClick(producto.id) })
                             Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
@@ -163,44 +129,26 @@ fun CategoryFilters(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // "All" button
         item {
             val isSelected = selectedCategory == null
             if (isSelected) {
-                Button(
-                    onClick = { onCategorySelected(null) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
+                Button(onClick = { onCategorySelected(null) }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) {
                     Text("Todos")
                 }
             } else {
-                OutlinedButton(
-                    onClick = { onCategorySelected(null) },
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
-                ) {
+                OutlinedButton(onClick = { onCategorySelected(null) }, border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)) {
                     Text("Todos", color = MaterialTheme.colorScheme.primary)
                 }
             }
         }
-        // Category buttons
         items(categories) { category ->
             val isSelected = selectedCategory?.id == category.id
             if (isSelected) {
-                Button(
-                    onClick = { onCategorySelected(category) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
+                Button(onClick = { onCategorySelected(category) }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) {
                     Text(category.nombre)
                 }
             } else {
-                OutlinedButton(
-                    onClick = { onCategorySelected(category) },
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
-                ) {
+                OutlinedButton(onClick = { onCategorySelected(category) }, border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)) {
                     Text(category.nombre, color = MaterialTheme.colorScheme.primary)
                 }
             }

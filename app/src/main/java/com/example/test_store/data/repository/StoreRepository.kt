@@ -9,6 +9,8 @@ import com.example.test_store.data.model.User
 import com.example.test_store.data.model.Category
 import com.example.test_store.data.model.CategoryResponse
 import com.example.test_store.data.model.ProductUpdateRequest
+import com.example.test_store.data.model.CartItem
+import com.example.test_store.data.model.CartResponse
 import com.example.test_store.BuildConfig
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
@@ -223,6 +225,129 @@ class StoreRepository {
                 true
             } else {
                 throw Exception(response["message"]?.toString() ?: "Error al eliminar el producto")
+            }
+        } catch (e: Exception) {
+            throw Exception("Error de conexión o de servidor: ${e.message}")
+        }
+    }
+
+    suspend fun getCart(): List<CartItem> = withContext(Dispatchers.IO) {
+        try {
+            val url = "$BASE_URL/cart.php"
+            val jsonText = URL(url).readText()
+            val response = gson.fromJson(jsonText, CartResponse::class.java)
+            if (response.success) {
+                response.data ?: emptyList()
+            } else {
+                throw Exception(response.message ?: "Error al obtener el carrito")
+            }
+        } catch (e: Exception) {
+            // Handle unauthorized or other errors
+            if (e is java.io.FileNotFoundException) { // Often indicates a 403 or 404
+                throw Exception("No autorizado o recurso no encontrado.")
+            }
+            throw Exception("No se pudo conectar: ${e.message}")
+        }
+    }
+
+    suspend fun addToCart(productId: Int, quantity: Int): Boolean = withContext(Dispatchers.IO) {
+        val url = "$BASE_URL/cart.php"
+        val jsonInputString = """{"product_id":$productId,"quantity":$quantity}"""
+
+        val connection = URL(url).openConnection() as java.net.HttpURLConnection
+        connection.apply {
+            requestMethod = "POST"
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("Accept", "application/json")
+            doOutput = true
+            connectTimeout = 15000
+            readTimeout = 15000
+        }
+
+        try {
+            connection.outputStream.bufferedWriter().use { it.write(jsonInputString) }
+            val stream = if (connection.responseCode < 400) connection.inputStream else connection.errorStream
+            val jsonText = stream.bufferedReader().use { it.readText() }
+            val response = gson.fromJson(jsonText, Map::class.java)
+
+            if (response["success"] == true) {
+                true
+            } else {
+                throw Exception(response["message"]?.toString() ?: "Error al añadir al carrito")
+            }
+        } catch (e: Exception) {
+            throw Exception("Error de conexión o de servidor: ${e.message}")
+        }
+    }
+
+    suspend fun updateCartItemQuantity(cartItemId: Int, quantity: Int): Boolean = withContext(Dispatchers.IO) {
+        val url = "$BASE_URL/cart.php"
+        val jsonInputString = """{"cart_item_id":$cartItemId,"quantity":$quantity}"""
+
+        val connection = URL(url).openConnection() as java.net.HttpURLConnection
+        connection.apply {
+            requestMethod = "PUT"
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("Accept", "application/json")
+            doOutput = true
+        }
+
+        try {
+            connection.outputStream.bufferedWriter().use { it.write(jsonInputString) }
+            val stream = if (connection.responseCode < 400) connection.inputStream else connection.errorStream
+            val jsonText = stream.bufferedReader().use { it.readText() }
+            val response = gson.fromJson(jsonText, Map::class.java)
+            return@withContext response["success"] == true
+        } catch (e: Exception) {
+            throw Exception("Error al actualizar el carrito: ${e.message}")
+        }
+    }
+
+    suspend fun removeFromCart(cartItemId: Int): Boolean = withContext(Dispatchers.IO) {
+        val url = "$BASE_URL/cart.php"
+        val jsonInputString = """{"cart_item_id":$cartItemId}"""
+
+        val connection = URL(url).openConnection() as java.net.HttpURLConnection
+        connection.apply {
+            requestMethod = "DELETE"
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("Accept", "application/json")
+            doOutput = true
+        }
+
+        try {
+            connection.outputStream.bufferedWriter().use { it.write(jsonInputString) }
+            val stream = if (connection.responseCode < 400) connection.inputStream else connection.errorStream
+            val jsonText = stream.bufferedReader().use { it.readText() }
+            val response = gson.fromJson(jsonText, Map::class.java)
+            return@withContext response["success"] == true
+        } catch (e: Exception) {
+            throw Exception("Error al eliminar del carrito: ${e.message}")
+        }
+    }
+
+    suspend fun checkout(cartItems: List<CartItem>, address: String): Boolean = withContext(Dispatchers.IO) {
+        val url = "$BASE_URL/checkout.php"
+        val jsonInputString = gson.toJson(mapOf("cart_items" to cartItems, "address" to address))
+
+        val connection = URL(url).openConnection() as java.net.HttpURLConnection
+        connection.apply {
+            requestMethod = "POST"
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("Accept", "application/json")
+            doOutput = true
+        }
+
+        try {
+            connection.outputStream.bufferedWriter().use { it.write(jsonInputString) }
+            val stream = if (connection.responseCode < 400) connection.inputStream else connection.errorStream
+            val jsonText = stream.bufferedReader().use { it.readText() }
+            val response = gson.fromJson(jsonText, Map::class.java)
+
+            if (response["success"] == true) {
+                true
+            } else {
+                throw Exception(response["message"]?.toString() ?: "Error durante el checkout")
             }
         } catch (e: Exception) {
             throw Exception("Error de conexión o de servidor: ${e.message}")
