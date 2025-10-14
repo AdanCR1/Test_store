@@ -25,7 +25,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Set up a global cookie manager to handle session cookies
         val cookieManager = CookieManager()
         CookieHandler.setDefault(cookieManager)
 
@@ -43,17 +42,18 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// Navegación principal
 @Composable
 fun AppNavigation() {
     val repository = remember { StoreRepository() }
 
-    // Hoist ViewModels to the top level
+    // ViewModels
     val loginViewModel: LoginViewModel = viewModel(factory = LoginViewModelFactory(repository))
     val productsViewModel: ProductsViewModel = viewModel(factory = ProductsViewModelFactory(repository))
     val productDetailViewModel: ProductDetailViewModel = viewModel(factory = ProductDetailViewModelFactory(repository))
     val registerViewModel: RegisterViewModel = viewModel(factory = RegisterViewModelFactory(repository))
     val productFormViewModel: ProductFormViewModel = viewModel(factory = ProductFormViewModelFactory(repository))
+    val cartViewModel: CartViewModel = viewModel(factory = CartViewModelFactory(repository))
+    val checkoutViewModel: CheckoutViewModel = viewModel(factory = CheckoutViewModelFactory(repository))
 
     // Navigation state
     var currentUser by remember { mutableStateOf<User?>(null) }
@@ -61,6 +61,8 @@ fun AppNavigation() {
     var showRegisterScreen by remember { mutableStateOf(false) }
     var editingProductId by remember { mutableStateOf<Int?>(null) }
     var isAddingProduct by remember { mutableStateOf(false) }
+    var showCartScreen by remember { mutableStateOf(false) }
+    var showCheckoutScreen by remember { mutableStateOf(false) }
 
     // Other state
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -69,13 +71,12 @@ fun AppNavigation() {
 
     val isFormOpen = editingProductId != null || isAddingProduct
 
-    // Back handler for all navigation states
-    BackHandler(enabled = selectedProductId != null || showRegisterScreen || isFormOpen) {
+    // Back handler
+    BackHandler(enabled = selectedProductId != null || showRegisterScreen || isFormOpen || showCartScreen || showCheckoutScreen) {
         when {
-            isFormOpen -> {
-                isAddingProduct = false
-                editingProductId = null
-            }
+            showCheckoutScreen -> showCheckoutScreen = false
+            showCartScreen -> showCartScreen = false
+            isFormOpen -> { isAddingProduct = false; editingProductId = null }
             selectedProductId != null -> selectedProductId = null
             showRegisterScreen -> showRegisterScreen = false
         }
@@ -84,83 +85,57 @@ fun AppNavigation() {
     fun closeFormAndRefresh() {
         isAddingProduct = false
         editingProductId = null
-        productsViewModel.loadProducts() // Refresh product list
-        // If coming from detail view, that will also recompose and get fresh data.
+        productsViewModel.loadProducts()
     }
 
     // Main navigation logic
     if (errorMessage != null) {
-        Box(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            // ... (Error handling UI, unchanged)
-        }
+        // ... Error UI
     } else if (currentUser == null) {
         // --- Login/Register Flow ---
         if (showRegisterScreen) {
-            RegisterScreen(
-                registerViewModel = registerViewModel,
-                onRegistrationSuccess = { email, password ->
-                    showRegisterScreen = false
-                    registerViewModel.resetState()
-                    prefillEmail = email
-                    prefillPassword = password
-                },
-                onBack = { showRegisterScreen = false }
-            )
+            RegisterScreen(registerViewModel, { email, password ->
+                showRegisterScreen = false
+                registerViewModel.resetState()
+                prefillEmail = email
+                prefillPassword = password
+            }, { showRegisterScreen = false })
         } else {
-            LoginScreen(
-                loginViewModel = loginViewModel,
-                onLoginSuccess = { user -> currentUser = user },
-                onNavigateToRegister = { showRegisterScreen = true },
-                prefillEmail = prefillEmail,
-                prefillPassword = prefillPassword
-            )
+            LoginScreen(loginViewModel, { user -> currentUser = user }, { showRegisterScreen = true }, prefillEmail, prefillPassword)
         }
+    } else if (showCheckoutScreen) {
+        // --- Checkout Flow ---
+        val cartItems = cartViewModel.uiState.collectAsState().value.cartItems
+        CheckoutScreen(
+            checkoutViewModel = checkoutViewModel,
+            cartItems = cartItems,
+            onBack = { showCheckoutScreen = false },
+            onCheckoutSuccess = { 
+                showCheckoutScreen = false
+                showCartScreen = false // Go back past the cart
+                productsViewModel.loadProducts() // Refresh stock on product list
+            }
+        )
+    } else if (showCartScreen) {
+        // --- Cart Flow ---
+        CartScreen(cartViewModel = cartViewModel, onBack = { showCartScreen = false }, onNavigateToCheckout = { showCheckoutScreen = true })
     } else if (isFormOpen) {
         // --- Add/Edit Product Flow ---
         LaunchedEffect(editingProductId) {
-            editingProductId?.let {
-                productFormViewModel.loadProduct(it)
-            }
+            editingProductId?.let { productFormViewModel.loadProduct(it) }
         }
-        ProductFormScreen(
-            viewModel = productFormViewModel,
-            onSaveSuccess = { closeFormAndRefresh() },
-            onBack = {
-                isAddingProduct = false
-                editingProductId = null
-            }
-        )
+        ProductFormScreen(productFormViewModel, { closeFormAndRefresh() }, {
+            isAddingProduct = false
+            editingProductId = null
+        })
     } else if (selectedProductId != null) {
         // --- Product Detail Flow ---
-        ProductoDetailScreen(
-            productId = selectedProductId!!,
-            currentUser = currentUser,
-            onBack = { selectedProductId = null },
-            productDetailViewModel = productDetailViewModel,
-            onNavigateToEdit = { productId -> editingProductId = productId },
-            onDeleteSuccess = {
-                selectedProductId = null
-                productsViewModel.loadProducts() // Refresh the list
-            }
-        )
+        ProductoDetailScreen(selectedProductId!!, currentUser, { selectedProductId = null }, productDetailViewModel, { productId -> editingProductId = productId }, {
+            selectedProductId = null
+            productsViewModel.loadProducts()
+        })
     } else {
         // --- Product List Flow (Default) ---
-        ProductosScreen(
-            currentUser = currentUser!!,
-            onLogout = {
-                currentUser = null
-                loginViewModel.logout()
-            },
-            onProductoClick = { productId -> selectedProductId = productId },
-            onError = { error -> errorMessage = error },
-            productsViewModel = productsViewModel,
-            onNavigateToAdd = {
-                productFormViewModel.resetForm()
-                isAddingProduct = true
-            }
-        )
+        ProductosScreen(currentUser!!, { currentUser = null; loginViewModel.logout() }, { productId -> selectedProductId = productId }, { error -> errorMessage = error }, productsViewModel, { productFormViewModel.resetForm(); isAddingProduct = true }, { showCartScreen = true })
     }
 }
