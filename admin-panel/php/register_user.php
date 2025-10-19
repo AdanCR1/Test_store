@@ -25,16 +25,12 @@ if (empty($nombre) || empty($email) || empty($password)) {
     exit();
 }
 
-// Almacenar la contraseña en texto plano
-// (ADVERTENCIA DE SEGURIDAD: NO HACER ESTO EN PRODUCCIÓN)
-// Esto se hace a petición del usuario para una tarea local específica.
-$hashed_password = $password;
+$hashed_password = md5($password);
 
 try {
-    global $pdo; // Accede a la variable global $pdo de config.php
+    global $pdo;
 
-    // 5. Verificar si el email ya existe
-
+    // Verificar si el email ya existe
     $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
     $stmt->execute([$email]);
     if ($stmt->fetch()) {
