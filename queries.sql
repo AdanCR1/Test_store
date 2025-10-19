@@ -38,7 +38,9 @@ CREATE TABLE usuarios (
     direccion TEXT,
     telefono VARCHAR(20),
     fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
-    is_admin BOOLEAN NOT NULL DEFAULT FALSE
+    is_admin BOOLEAN NOT NULL DEFAULT FALSE,
+    is_super_admin BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- Crear tabla carrito de compras
@@ -102,11 +104,11 @@ INSERT INTO productos (id, nombre, descripción, precio, stock, categoria_id, im
 (14, 'ASUS ROG Phone 7 Ultimate', 'Teléfono gaming con Snapdragon 8 Gen 2, 16GB RAM, sistema de refrigeración avanzado.', 999.99, 15, 5, 'https://www.stuff.tv/wp-content/uploads/sites/2/2023/04/Asus-ROG-Phone-7-Ultimate-rear.jpg');
 
 -- Insertar datos en usuarios
-INSERT INTO usuarios (nombre, email, password, direccion, telefono, is_admin) VALUES
-('Admin', 'admin@admin.com', 'admin123', 'Oficina Central', '66666666', TRUE),
-('Marshel', 'marshel@tecba.com', 'marshel123', 'Av. Principal 123, La Paz', '77123456', FALSE),
-('Adán', 'adan@tecba.com', 'adan123', 'Calle Comercio 456, La Paz', '77234567', FALSE),
-('Rommel', 'rommel@tecba.com', 'rommel123', 'Zona Central 789, La Paz', '77345678', FALSE);
+INSERT INTO usuarios (nombre, email, password, direccion, telefono, is_admin, is_super_admin, is_active) VALUES
+('Admin', 'admin@admin.com', MD5('admin123'), 'Oficina Central', '66666666', TRUE, TRUE, TRUE),
+('Marshel', 'marshel@tecba.com', MD5('marshel123'), 'Av. Principal 123, La Paz', '77123456', FALSE, FALSE, TRUE),
+('Adán', 'adan@tecba.com', MD5('adan123'), 'Calle Comercio 456, La Paz', '77234567', FALSE, FALSE, TRUE),
+('Rommel', 'rommel@tecba.com', MD5('rommel123'), 'Zona Central 789, La Paz', '77345678', FALSE, FALSE, TRUE);
 
 -- Insertar datos de ejemplo en carrito
 INSERT INTO carrito (usuario_id, producto_id, cantidad) VALUES
