@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,7 +28,8 @@ fun ProductosScreen(
     onError: (String) -> Unit,
     productsViewModel: ProductsViewModel,
     onNavigateToAdd: () -> Unit,
-    onNavigateToCart: () -> Unit // New callback
+    onNavigateToCart: () -> Unit, // New callback
+    onNavigateToUserManagement: () -> Unit
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
     val uiState by productsViewModel.uiState.collectAsState()
@@ -60,6 +62,11 @@ fun ProductosScreen(
                     }
                 },
                 actions = {
+                    if (currentUser.isSuperAdmin) {
+                        IconButton(onClick = onNavigateToUserManagement) {
+                            Icon(Icons.Default.ManageAccounts, contentDescription = "Gestión de Usuarios")
+                        }
+                    }
                     TextButton(onClick = { showLogoutDialog = true }) {
                         Text("Salir", color = MaterialTheme.colorScheme.primary)
                     }

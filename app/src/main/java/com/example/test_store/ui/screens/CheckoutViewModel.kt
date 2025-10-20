@@ -36,6 +36,10 @@ class CheckoutViewModel(private val repository: StoreRepository) : ViewModel() {
             }
         }
     }
+
+    fun resetState() {
+        _uiState.value = CheckoutUiState()
+    }
 }
 
 class CheckoutViewModelFactory(private val repository: StoreRepository) : ViewModelProvider.Factory {

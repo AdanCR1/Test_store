@@ -16,8 +16,8 @@ $method = $_SERVER['REQUEST_METHOD'];
 // GET: Obtener el contenido del carrito
 if ($method === 'GET') {
     try {
-        $stmt = $pdo->prepare("
-            SELECT 
+        $stmt = $pdo->prepare(
+            "SELECT 
                 c.id as cart_item_id, 
                 p.id as product_id, 
                 p.nombre, 
@@ -121,5 +121,3 @@ if ($method === 'DELETE') {
         echo json_encode(['success' => false, 'message' => 'Error al eliminar el producto.']);
     }
 }
-
-
