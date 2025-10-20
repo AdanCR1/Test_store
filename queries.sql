@@ -105,10 +105,11 @@ INSERT INTO productos (id, nombre, descripción, precio, stock, categoria_id, im
 
 -- Insertar datos en usuarios
 INSERT INTO usuarios (nombre, email, password, direccion, telefono, is_admin, is_super_admin, is_active) VALUES
-('Admin', 'admin@admin.com', MD5('admin123'), 'Oficina Central', '66666666', TRUE, TRUE, TRUE),
+('Super Admin', 'super@admin.com', MD5('super123'), 'Oficina Central', '66666666', TRUE, TRUE, TRUE),
+('Admin', 'admin@admin.com', MD5('admin123'), 'Oficina Central', '66666666', TRUE, FALSE, TRUE),
 ('Marshel', 'marshel@tecba.com', MD5('marshel123'), 'Av. Principal 123, La Paz', '77123456', FALSE, FALSE, TRUE),
 ('Adán', 'adan@tecba.com', MD5('adan123'), 'Calle Comercio 456, La Paz', '77234567', FALSE, FALSE, TRUE),
-('Rommel', 'rommel@tecba.com', MD5('rommel123'), 'Zona Central 789, La Paz', '77345678', FALSE, FALSE, TRUE);
+('Rommel', 'rommel@tecba.com', MD5('rommel123'), 'Zona Central 789, La Paz', '77345678', FALSE, FALSE, FALSE);
 
 -- Insertar datos de ejemplo en carrito
 INSERT INTO carrito (usuario_id, producto_id, cantidad) VALUES

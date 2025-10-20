@@ -22,39 +22,49 @@ class StoreRepository {
     private val gson = Gson()
     private val BASE_URL = BuildConfig.API_BASE_URL
 
+    private fun makeRequest(urlString: String, method: String = "GET", body: String? = null): String {
+        val url = URL(urlString)
+        val connection = url.openConnection() as java.net.HttpURLConnection
+        connection.requestMethod = method
+        connection.connectTimeout = 15000
+        connection.readTimeout = 15000
+
+        CookieStorage.cookie?.let {
+            connection.setRequestProperty("Cookie", it)
+        }
+
+        if (method == "POST" || method == "PUT" || method == "DELETE") {
+            connection.doOutput = true
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.setRequestProperty("Accept", "application/json")
+            body?.let {
+                connection.outputStream.bufferedWriter().use { writer -> writer.write(it) }
+            }
+        }
+
+        val stream = if (connection.responseCode < 400) connection.inputStream else connection.errorStream
+        return stream.bufferedReader().use { it.readText() }
+    }
+
     suspend fun registerUser(request: RegisterRequest): Boolean = withContext(Dispatchers.IO) {
         val url = "$BASE_URL/register_user.php"
         val jsonInputString = gson.toJson(request)
 
-        val connection = URL(url).openConnection() as java.net.HttpURLConnection
-        connection.apply {
-            requestMethod = "POST"
-            setRequestProperty("Content-Type", "application/json")
-            setRequestProperty("Accept", "application/json")
-            doOutput = true
-            connectTimeout = 15000
-            readTimeout = 15000
-        }
-
         try {
-            connection.outputStream.bufferedWriter().use { it.write(jsonInputString) }
-            val jsonText = connection.inputStream.bufferedReader().use { it.readText() }
+            val jsonText = makeRequest(url, "POST", jsonInputString)
             val response = gson.fromJson(jsonText, LoginResponse::class.java)
 
             if (response.success) {
                 true
             } else {
-                // Propagate the specific message from the backend
                 throw Exception(response.message ?: "Error desconocido del servidor")
             }
         } catch (e: Exception) {
-            // Only catch and wrap actual network/parsing errors
             if (e is java.net.SocketTimeoutException || e is java.io.IOException) {
                 throw Exception("Error de conexión: ${e.message}")
             } else if (e is com.google.gson.JsonSyntaxException) {
                 throw Exception("Error de formato de respuesta del servidor: ${e.message}")
             } else {
-                // Re-throw other exceptions, including the one from response.message
                 throw e
             }
         }
@@ -65,14 +75,12 @@ class StoreRepository {
         val jsonInputString = """{"email":"$email","password":"$password"}"""
 
         val connection = URL(url).openConnection() as java.net.HttpURLConnection
-        connection.apply {
-            requestMethod = "POST"
-            setRequestProperty("Content-Type", "application/json")
-            setRequestProperty("Accept", "application/json")
-            doOutput = true
-            connectTimeout = 10000
-            readTimeout = 10000
-        }
+        connection.requestMethod = "POST"
+        connection.setRequestProperty("Content-Type", "application/json")
+        connection.setRequestProperty("Accept", "application/json")
+        connection.doOutput = true
+        connection.connectTimeout = 10000
+        connection.readTimeout = 10000
 
         try {
             connection.outputStream.bufferedWriter().use { it.write(jsonInputString) }
@@ -80,21 +88,20 @@ class StoreRepository {
             val response = gson.fromJson(jsonText, LoginResponse::class.java)
 
             if (response.success && response.user != null) {
+                val cookieHeader = connection.headerFields["Set-Cookie"]
+                if (cookieHeader != null) {
+                    CookieStorage.cookie = cookieHeader.joinToString(separator = ";")
+                }
                 response.user
             } else {
-                // If backend explicitly says login failed, use "Credenciales inválidas"
-                // Otherwise, use the backend's message or a generic one
                 throw Exception(response.message ?: "Credenciales inválidas")
             }
         } catch (e: Exception) {
-            // Differentiate between network/parsing errors and login failures
             if (e is java.net.SocketTimeoutException || e is java.io.IOException) {
                 throw Exception("Error de conexión: ${e.message}")
             } else if (e is com.google.gson.JsonSyntaxException) {
                 throw Exception("Error de formato de respuesta del servidor: ${e.message}")
             } else {
-                // This catches the Exception thrown above for invalid credentials
-                // or any other unexpected exception.
                 throw e
             }
         }
@@ -103,7 +110,7 @@ class StoreRepository {
     suspend fun loadProductosFromAPI(): List<Producto> = withContext(Dispatchers.IO) {
         try {
             val url = "$BASE_URL/products.php"
-            val jsonText = URL(url).readText()
+            val jsonText = makeRequest(url)
             val response = gson.fromJson(jsonText, ProductoResponse::class.java)
             if (response.success) {
                 response.data ?: emptyList()
@@ -118,7 +125,7 @@ class StoreRepository {
     suspend fun loadSingleProductFromAPI(productId: Int): Producto = withContext(Dispatchers.IO) {
         try {
             val url = "$BASE_URL/products.php?id=$productId"
-            val jsonText = URL(url).readText()
+            val jsonText = makeRequest(url)
             val response = gson.fromJson(jsonText, SingleProductoResponse::class.java)
             if (response.success && response.data != null) {
                 response.data
@@ -133,7 +140,7 @@ class StoreRepository {
     suspend fun getCategories(): List<Category> = withContext(Dispatchers.IO) {
         try {
             val url = "$BASE_URL/products.php?action=getCategories"
-            val jsonText = URL(url).readText()
+            val jsonText = makeRequest(url)
             val response = gson.fromJson(jsonText, CategoryResponse::class.java)
             if (response.success) {
                 response.data ?: emptyList()
@@ -149,20 +156,8 @@ class StoreRepository {
         val url = "$BASE_URL/products.php"
         val jsonInputString = gson.toJson(product)
 
-        val connection = URL(url).openConnection() as java.net.HttpURLConnection
-        connection.apply {
-            requestMethod = "POST"
-            setRequestProperty("Content-Type", "application/json")
-            setRequestProperty("Accept", "application/json")
-            doOutput = true
-            connectTimeout = 15000
-            readTimeout = 15000
-        }
-
         try {
-            connection.outputStream.bufferedWriter().use { it.write(jsonInputString) }
-            val jsonText = connection.inputStream.bufferedReader().use { it.readText() }
-            // Assuming a simple success/message response, not returning a full object
+            val jsonText = makeRequest(url, "POST", jsonInputString)
             val response = gson.fromJson(jsonText, Map::class.java)
 
             if (response["success"] == true) {
@@ -171,7 +166,6 @@ class StoreRepository {
                 throw Exception(response["message"]?.toString() ?: "Error al crear el producto")
             }
         } catch (e: Exception) {
-            // Handle network/parsing errors
             throw Exception("Error de conexión o de servidor: ${e.message}")
         }
     }
@@ -180,19 +174,8 @@ class StoreRepository {
         val url = "$BASE_URL/products.php"
         val jsonInputString = gson.toJson(product)
 
-        val connection = URL(url).openConnection() as java.net.HttpURLConnection
-        connection.apply {
-            requestMethod = "PUT"
-            setRequestProperty("Content-Type", "application/json")
-            setRequestProperty("Accept", "application/json")
-            doOutput = true
-            connectTimeout = 15000
-            readTimeout = 15000
-        }
-
         try {
-            connection.outputStream.bufferedWriter().use { it.write(jsonInputString) }
-            val jsonText = connection.inputStream.bufferedReader().use { it.readText() }
+            val jsonText = makeRequest(url, "PUT", jsonInputString)
             val response = gson.fromJson(jsonText, Map::class.java)
 
             if (response["success"] == true) {
@@ -208,17 +191,8 @@ class StoreRepository {
     suspend fun deleteProduct(productId: Int): Boolean = withContext(Dispatchers.IO) {
         val url = "$BASE_URL/products.php?id=$productId"
 
-        val connection = URL(url).openConnection() as java.net.HttpURLConnection
-        connection.apply {
-            requestMethod = "DELETE"
-            connectTimeout = 10000
-            readTimeout = 10000
-        }
-
         try {
-            // For DELETE, the response body might be read from errorStream if status code is not 2xx
-            val stream = if (connection.responseCode < 400) connection.inputStream else connection.errorStream
-            val jsonText = stream.bufferedReader().use { it.readText() }
+            val jsonText = makeRequest(url, "DELETE")
             val response = gson.fromJson(jsonText, Map::class.java)
 
             if (response["success"] == true) {
@@ -234,7 +208,7 @@ class StoreRepository {
     suspend fun getCart(): List<CartItem> = withContext(Dispatchers.IO) {
         try {
             val url = "$BASE_URL/cart.php"
-            val jsonText = URL(url).readText()
+            val jsonText = makeRequest(url)
             val response = gson.fromJson(jsonText, CartResponse::class.java)
             if (response.success) {
                 response.data ?: emptyList()
@@ -242,8 +216,7 @@ class StoreRepository {
                 throw Exception(response.message ?: "Error al obtener el carrito")
             }
         } catch (e: Exception) {
-            // Handle unauthorized or other errors
-            if (e is java.io.FileNotFoundException) { // Often indicates a 403 or 404
+            if (e is java.io.FileNotFoundException) { 
                 throw Exception("No autorizado o recurso no encontrado.")
             }
             throw Exception("No se pudo conectar: ${e.message}")
@@ -254,20 +227,8 @@ class StoreRepository {
         val url = "$BASE_URL/cart.php"
         val jsonInputString = """{"product_id":$productId,"quantity":$quantity}"""
 
-        val connection = URL(url).openConnection() as java.net.HttpURLConnection
-        connection.apply {
-            requestMethod = "POST"
-            setRequestProperty("Content-Type", "application/json")
-            setRequestProperty("Accept", "application/json")
-            doOutput = true
-            connectTimeout = 15000
-            readTimeout = 15000
-        }
-
         try {
-            connection.outputStream.bufferedWriter().use { it.write(jsonInputString) }
-            val stream = if (connection.responseCode < 400) connection.inputStream else connection.errorStream
-            val jsonText = stream.bufferedReader().use { it.readText() }
+            val jsonText = makeRequest(url, "POST", jsonInputString)
             val response = gson.fromJson(jsonText, Map::class.java)
 
             if (response["success"] == true) {
@@ -284,18 +245,8 @@ class StoreRepository {
         val url = "$BASE_URL/cart.php"
         val jsonInputString = """{"cart_item_id":$cartItemId,"quantity":$quantity}"""
 
-        val connection = URL(url).openConnection() as java.net.HttpURLConnection
-        connection.apply {
-            requestMethod = "PUT"
-            setRequestProperty("Content-Type", "application/json")
-            setRequestProperty("Accept", "application/json")
-            doOutput = true
-        }
-
         try {
-            connection.outputStream.bufferedWriter().use { it.write(jsonInputString) }
-            val stream = if (connection.responseCode < 400) connection.inputStream else connection.errorStream
-            val jsonText = stream.bufferedReader().use { it.readText() }
+            val jsonText = makeRequest(url, "PUT", jsonInputString)
             val response = gson.fromJson(jsonText, Map::class.java)
             return@withContext response["success"] == true
         } catch (e: Exception) {
@@ -307,18 +258,8 @@ class StoreRepository {
         val url = "$BASE_URL/cart.php"
         val jsonInputString = """{"cart_item_id":$cartItemId}"""
 
-        val connection = URL(url).openConnection() as java.net.HttpURLConnection
-        connection.apply {
-            requestMethod = "DELETE"
-            setRequestProperty("Content-Type", "application/json")
-            setRequestProperty("Accept", "application/json")
-            doOutput = true
-        }
-
         try {
-            connection.outputStream.bufferedWriter().use { it.write(jsonInputString) }
-            val stream = if (connection.responseCode < 400) connection.inputStream else connection.errorStream
-            val jsonText = stream.bufferedReader().use { it.readText() }
+            val jsonText = makeRequest(url, "DELETE", jsonInputString)
             val response = gson.fromJson(jsonText, Map::class.java)
             return@withContext response["success"] == true
         } catch (e: Exception) {
@@ -330,18 +271,8 @@ class StoreRepository {
         val url = "$BASE_URL/checkout.php"
         val jsonInputString = gson.toJson(mapOf("cart_items" to cartItems, "address" to address))
 
-        val connection = URL(url).openConnection() as java.net.HttpURLConnection
-        connection.apply {
-            requestMethod = "POST"
-            setRequestProperty("Content-Type", "application/json")
-            setRequestProperty("Accept", "application/json")
-            doOutput = true
-        }
-
         try {
-            connection.outputStream.bufferedWriter().use { it.write(jsonInputString) }
-            val stream = if (connection.responseCode < 400) connection.inputStream else connection.errorStream
-            val jsonText = stream.bufferedReader().use { it.readText() }
+            val jsonText = makeRequest(url, "POST", jsonInputString)
             val response = gson.fromJson(jsonText, Map::class.java)
 
             if (response["success"] == true) {
@@ -351,6 +282,47 @@ class StoreRepository {
             }
         } catch (e: Exception) {
             throw Exception("Error de conexión o de servidor: ${e.message}")
+        }
+    }
+
+    suspend fun getUsers(): List<User> = withContext(Dispatchers.IO) {
+        val url = "$BASE_URL/manage_users.php"
+        try {
+            val jsonText = makeRequest(url)
+            val response = gson.fromJson(jsonText, com.example.test_store.data.model.UserResponse::class.java)
+            if (response.success) {
+                response.data ?: emptyList()
+            } else {
+                throw Exception(response.message ?: "Error al obtener usuarios")
+            }
+        } catch (e: Exception) {
+            if (e is java.net.SocketTimeoutException || e is java.io.IOException) {
+                throw Exception("Error de conexión: ${e.message}")
+            } else {
+                throw e
+            }
+        }
+    }
+
+    suspend fun updateUser(user: User): Boolean = withContext(Dispatchers.IO) {
+        val url = "$BASE_URL/update_user.php"
+        val jsonInputString = gson.toJson(user)
+
+        try {
+            val jsonText = makeRequest(url, "PUT", jsonInputString)
+            val response = gson.fromJson(jsonText, Map::class.java)
+
+            if (response["success"] == true) {
+                true
+            } else {
+                throw Exception(response["message"]?.toString() ?: "Error al actualizar el usuario")
+            }
+        } catch (e: Exception) {
+            if (e is java.net.SocketTimeoutException || e is java.io.IOException) {
+                throw Exception("Error de conexión: ${e.message}")
+            } else {
+                throw e
+            }
         }
     }
 }

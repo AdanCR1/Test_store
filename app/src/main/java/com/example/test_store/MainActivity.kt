@@ -54,6 +54,7 @@ fun AppNavigation() {
     val productFormViewModel: ProductFormViewModel = viewModel(factory = ProductFormViewModelFactory(repository))
     val cartViewModel: CartViewModel = viewModel(factory = CartViewModelFactory(repository))
     val checkoutViewModel: CheckoutViewModel = viewModel(factory = CheckoutViewModelFactory(repository))
+    val userManagementViewModel: UserManagementViewModel = viewModel(factory = UserManagementViewModelFactory(repository))
 
     // Navigation state
     var currentUser by remember { mutableStateOf<User?>(null) }
@@ -63,6 +64,7 @@ fun AppNavigation() {
     var isAddingProduct by remember { mutableStateOf(false) }
     var showCartScreen by remember { mutableStateOf(false) }
     var showCheckoutScreen by remember { mutableStateOf(false) }
+    var showUserManagementScreen by remember { mutableStateOf(false) }
 
     // Other state
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -72,8 +74,9 @@ fun AppNavigation() {
     val isFormOpen = editingProductId != null || isAddingProduct
 
     // Back handler
-    BackHandler(enabled = selectedProductId != null || showRegisterScreen || isFormOpen || showCartScreen || showCheckoutScreen) {
+    BackHandler(enabled = selectedProductId != null || showRegisterScreen || isFormOpen || showCartScreen || showCheckoutScreen || showUserManagementScreen) {
         when {
+            showUserManagementScreen -> showUserManagementScreen = false
             showCheckoutScreen -> showCheckoutScreen = false
             showCartScreen -> showCartScreen = false
             isFormOpen -> { isAddingProduct = false; editingProductId = null }
@@ -103,6 +106,9 @@ fun AppNavigation() {
         } else {
             LoginScreen(loginViewModel, { user -> currentUser = user }, { showRegisterScreen = true }, prefillEmail, prefillPassword)
         }
+    } else if (showUserManagementScreen) {
+        // --- User Management Flow ---
+        UserManagementScreen(userManagementViewModel = userManagementViewModel, onBack = { showUserManagementScreen = false })
     } else if (showCheckoutScreen) {
         // --- Checkout Flow ---
         val cartItems = cartViewModel.uiState.collectAsState().value.cartItems
@@ -136,6 +142,6 @@ fun AppNavigation() {
         })
     } else {
         // --- Product List Flow (Default) ---
-        ProductosScreen(currentUser!!, { currentUser = null; loginViewModel.logout() }, { productId -> selectedProductId = productId }, { error -> errorMessage = error }, productsViewModel, { productFormViewModel.resetForm(); isAddingProduct = true }, { showCartScreen = true })
+        ProductosScreen(currentUser!!, { currentUser = null; loginViewModel.logout() }, { productId -> selectedProductId = productId }, { error -> errorMessage = error }, productsViewModel, { productFormViewModel.resetForm(); isAddingProduct = true }, { showCartScreen = true }, { showUserManagementScreen = true })
     }
 }

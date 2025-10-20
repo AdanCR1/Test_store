@@ -11,5 +11,9 @@ data class User(
     @SerializedName("fecha_registro")
     val fechaRegistro: String?,
     @SerializedName("is_admin")
-    val isAdmin: Boolean = false
+    val isAdmin: Boolean = false,
+    @SerializedName("is_super_admin")
+    val isSuperAdmin: Boolean = false,
+    @SerializedName("is_active")
+    val isActive: Boolean = true
 )

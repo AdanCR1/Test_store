@@ -37,6 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['is_admin'] = (bool)($user['is_admin'] ?? false);
         $_SESSION['is_super_admin'] = (bool)($user['is_super_admin'] ?? false);
 
+
+
         echo json_encode([
             'success' => true,
             'message' => 'Login de usuario exitoso',
